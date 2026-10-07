@@ -1,9 +1,8 @@
 /* =========================================================
-   My StudE — v7.0 (sem aulas, com login e ranking)
+   My StudE — v7.0
    ========================================================= */
 const STORAGE_KEY = 'mystude_v2';
 
-/* =============== CONCURSOS =============== */
 const CONCURSOS = {
   pmsp:{name:'PMSP',full:'Polícia Militar de São Paulo',icon:'shield',blocks:[
     {name:'Português',topics:['Interpretação de texto','Gramática','Questões']},
@@ -122,7 +121,7 @@ const TAB_DEFS=[
   {id:'config',label:'Configurações',icon:'settings'}
 ];
 
-/* =============== HELPERS =============== */
+/* HELPERS */
 const todayStr=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const dateToStr=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const strToDate=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);};
@@ -139,7 +138,7 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const escapeHtml=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const escapeAttr=escapeHtml;
 
-/* =============== STATE =============== */
+/* STATE */
 let state=null;
 const defaultVisibleTabs=()=>TAB_DEFS.reduce((o,t)=>(o[t.id]=true,o),{});
 function defaultState(){
@@ -167,15 +166,12 @@ function loadState(){
     if(!Array.isArray(m.calendarEvents))m.calendarEvents=[];
     if(!Array.isArray(m.cycle.blocks))m.cycle.blocks=[];
     if(!m.unlockedAchievements||typeof m.unlockedAchievements!=='object')m.unlockedAchievements={};
-    delete m.videos;
     return m;
   }catch(e){console.error(e);return defaultState();}
 }
 const saveState=()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){console.error(e);toast('Erro ao salvar','warn');}};
-window.saveState=saveState;
-window.state=null;
 
-/* =============== TOAST =============== */
+/* TOAST */
 let toastTimer=null;
 function toast(msg,type=''){
   const el=document.getElementById('toast');
@@ -183,11 +179,9 @@ function toast(msg,type=''){
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>{el.className='toast '+type;},2600);
 }
-window.toast=toast;
 const refreshIcons=()=>{if(window.lucide&&window.lucide.createIcons)setTimeout(()=>window.lucide.createIcons(),0);};
-window.refreshIcons=refreshIcons;
 
-/* =============== CONCURSO =============== */
+/* CONCURSO */
 function applyConcursoBlocks(key){
   const c=CONCURSOS[key];if(!c)return;
   state.cycle.blocks=c.blocks.map((b,i)=>({id:i,name:b.name,topics:b.topics.slice(),completed:false,completedDate:null,level:0,levelProgress:0}));
@@ -195,7 +189,7 @@ function applyConcursoBlocks(key){
   state.cycle.cyclesCompleted=state.cycle.cyclesCompleted||0;
 }
 
-/* =============== CÁLCULOS =============== */
+/* CÁLCULOS */
 const totalMinutesOn=ds=>state.studies.filter(s=>s.date===ds).reduce((a,s)=>a+s.minutes,0);
 const totalMinutesRange=(f,t)=>state.studies.filter(s=>s.date>=f&&s.date<=t).reduce((a,s)=>a+s.minutes,0);
 const questionsMinutesOn=ds=>state.questions.filter(q=>q.date===ds).reduce((a,q)=>a+q.minutes,0);
@@ -229,7 +223,7 @@ window.totalQuestionsCount=totalQuestionsCount;
 window.totalStudyMinutes=totalStudyMinutes;
 window.studyStreak=studyStreak;
 
-/* =============== XP =============== */
+/* XP */
 function calcTotalXP(){
   const studyXP=totalStudyMinutes()*1;
   const qXP=totalQuestionsCount()*3;
@@ -265,7 +259,7 @@ function showLevelUp(rank){
 window.calcTotalXP=calcTotalXP;
 window.getXPProgress=getXPProgress;
 
-/* =============== ACHIEVEMENTS =============== */
+/* ACHIEVEMENTS */
 function calcAchProgress(a){
   switch(a.cat){
     case'hours':return totalStudyHours();
@@ -305,7 +299,7 @@ function showAchPopup(a){
   achPopupTimer=setTimeout(()=>pop.classList.remove('show'),3600);
 }
 
-/* =============== VIEWS =============== */
+/* VIEWS */
 const VIEW_TITLES={dashboard:'Dashboard',ciclo:'Ciclo de Estudos',registros:'Registrar Estudo',stats:'Estatísticas',questoes:'Central de Questões',conquistas:'Conquistas',ranking:'Ranking',calendario:'Calendário',config:'Configurações'};
 function switchView(name){
   if(name!=='config'&&state.settings.visibleTabs[name]===false)name='config';
@@ -339,7 +333,7 @@ function applyTabVisibility(){
   }
 }
 
-/* =============== DASHBOARD =============== */
+/* DASHBOARD */
 function renderDashboard(){
   const today=todayStr();
   const ws=startOfWeek(today),we=endOfWeek(today);
@@ -439,7 +433,7 @@ function renderNextSteps(){
     </div>`).join('')||'<div class="muted small">Tudo em ordem!</div>';
 }
 
-/* =============== CICLO =============== */
+/* CICLO */
 function renderCycle(){
   const cp=cycleProgress();
   document.getElementById('cyclePct').textContent=cp.pct+'%';
@@ -511,7 +505,7 @@ function restartCycle(){
   saveState();renderCycle();renderDashboard();toast('Ciclo reiniciado.','success');
 }
 
-/* =============== MODAL BLOCO =============== */
+/* MODAL BLOCO */
 let editingBlockId=null;
 function openBlockModal(id=null){
   editingBlockId=id;
@@ -561,7 +555,7 @@ function deleteBlock(id){
   toast('Matéria excluída.','warn');
 }
 
-/* =============== STUDIES =============== */
+/* STUDIES */
 function fillSubjectSelects(){
   const set=new Set(Object.keys(SUBJECT_COLORS));
   state.cycle.blocks.forEach(b=>set.add(b.name));
@@ -676,7 +670,7 @@ function handleStudySubmit(e){
   checkAchievements();renderXPWidget();
 }
 
-/* =============== CHARTS =============== */
+/* CHARTS */
 let chartBar=null,chartPie=null,statsRange='week';
 function renderCharts(){
   const today=todayStr();
@@ -720,7 +714,7 @@ function renderCharts(){
 }
 window.renderCharts=renderCharts;
 
-/* =============== QUESTÕES =============== */
+/* QUESTÕES */
 function renderQuestions(){
   const today=todayStr();
   const doneMin=questionsMinutesOn(today);
@@ -742,7 +736,7 @@ function renderQuestions(){
 }
 window.renderQuestions=renderQuestions;
 
-/* =============== CONQUISTAS =============== */
+/* CONQUISTAS */
 let achFilter='all';
 function renderAchCard(a,compact=false){
   const unlocked=!!state.unlockedAchievements[a.id];
@@ -782,7 +776,7 @@ function renderAchievements(){
 }
 window.renderAchievements=renderAchievements;
 
-/* =============== CALENDÁRIO =============== */
+/* CALENDÁRIO */
 let calMonth=null;
 function renderCalendar(){
   const base=calMonth||state.ui.calMonth||todayStr().slice(0,7);
@@ -842,7 +836,7 @@ function openDayModal(ds){
   refreshIcons();
 }
 
-/* =============== MODAL EVENTO =============== */
+/* MODAL EVENTO */
 let editingEventId=null;
 function openEventModal(id=null,preset=null){
   editingEventId=id;
@@ -908,7 +902,7 @@ function renderEventsList(){
   refreshIcons();
 }
 
-/* =============== TIMERS =============== */
+/* TIMERS */
 let timerInterval=null,tickCount=0;
 function timerElapsed(k){
   const t=state.timers[k];if(!t)return 0;
@@ -975,7 +969,7 @@ function applyStudyTimerToForm(){
   toast(`Aplicado: ${Math.floor(total/60)}h${String(total%60).padStart(2,'0')}`,'success');
 }
 
-/* =============== CONFIG =============== */
+/* CONFIG */
 function loadSettingsIntoForm(){
   document.getElementById('cfgDailyGoal').value=state.settings.dailyGoalMin;
   document.getElementById('cfgQGoal').value=state.settings.qGoalMin;
@@ -1020,7 +1014,7 @@ function handleCfgGoals(e){e.preventDefault();
   state.cycle.startDate=document.getElementById('cfgCycleStart').value||todayStr();
   saveState();renderDashboard();renderQuestions();renderCycle();toast('Metas salvas.','success');}
 
-/* =============== EXPORT/IMPORT =============== */
+/* EXPORT/IMPORT */
 function exportJSON(){
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -1048,7 +1042,7 @@ function clearAll(){
 }
 const closeModal=id=>document.getElementById(id)?.classList.remove('show');
 
-/* =============== ONBOARDING =============== */
+/* ONBOARDING */
 function renderOnboarding(){
   const wrap=document.getElementById('concursoGrid');
   wrap.innerHTML=Object.entries(CONCURSOS).map(([k,c])=>`
@@ -1072,7 +1066,7 @@ function updateBrand(){
   document.getElementById('brandSub').textContent=c.full;
 }
 
-/* =============== EVENTS =============== */
+/* EVENTS */
 function bindEvents(){
   document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>switchView(n.dataset.view)));
   document.getElementById('hamburger').addEventListener('click',openSidebar);
@@ -1151,7 +1145,7 @@ function bindEvents(){
   document.getElementById('btnClear').addEventListener('click',clearAll);
 }
 
-/* =============== XP WIDGET =============== */
+/* XP WIDGET */
 function renderXPWidget(){
   const{xp,current,next,pct,base,cap}=getXPProgress();
   document.getElementById('xpLevelNum').textContent=current.n;
@@ -1162,7 +1156,7 @@ function renderXPWidget(){
 }
 window.renderXPWidget=renderXPWidget;
 
-/* =============== BOOT =============== */
+/* BOOT */
 function bootApp(){
   ['q','study'].forEach(k=>{const t=state.timers[k];if(t&&t.running){t.running=false;t.startTime=null;}});
   const lastDay=state.ui.lastDay||todayStr();
@@ -1202,6 +1196,8 @@ function bootApp(){
 function init(){
   state=loadState();
   window.state=state;
+  window.defaultState=defaultState;
+  window.saveState=saveState;
   bindEvents();
   if(!state.concurso){
     renderOnboarding();
